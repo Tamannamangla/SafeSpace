@@ -64,7 +64,7 @@ export function ChatInput({ value, onChange, onSend, isLoading, isChildMode }: C
 
   if (isChildMode) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 pt-3"
+      <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 pt-3"
         style={{ background: "linear-gradient(to top, #fff9c4, #fff9c4ee, transparent)" }}>
         <div className="max-w-3xl mx-auto">
           <div className="flex items-end gap-2 rounded-2xl px-4 py-3 shadow-lg"
@@ -129,7 +129,7 @@ export function ChatInput({ value, onChange, onSend, isLoading, isChildMode }: C
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 pt-3 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent">
+    <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 pt-3 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-end gap-2.5 bg-[#141414] border border-white/[0.09] rounded-2xl px-4 py-3 shadow-2xl focus-within:border-pink-500/40 transition-colors duration-150">
           <Textarea
