@@ -1,4 +1,4 @@
-import { Heart, Volume2, VolumeX } from "lucide-react";
+import { BarChart2, Heart, Volume2, VolumeX } from "lucide-react";
 import type { VoiceLang } from "@/hooks/useVoice";
 
 interface ChatHeaderProps {
@@ -7,9 +7,11 @@ interface ChatHeaderProps {
   lang: VoiceLang;
   onChangeLang: (lang: VoiceLang) => void;
   isSpeaking: boolean;
+  onAnalyze?: () => void;
+  messagesCount?: number;
 }
 
-export function ChatHeader({ voiceEnabled, onToggleVoice, lang, onChangeLang, isSpeaking }: ChatHeaderProps) {
+export function ChatHeader({ voiceEnabled, onToggleVoice, lang, onChangeLang, isSpeaking, onAnalyze, messagesCount = 0 }: ChatHeaderProps) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-6 h-14 border-b border-white/5 bg-[#0a0a0a]/90 backdrop-blur-md">
       <div className="flex items-center gap-2.5">
@@ -20,6 +22,23 @@ export function ChatHeader({ voiceEnabled, onToggleVoice, lang, onChangeLang, is
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Generate Report button */}
+        {onAnalyze !== undefined ? (
+          <button
+            onClick={onAnalyze}
+            disabled={messagesCount === 0}
+            title="Generate psychological report"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+              messagesCount > 0
+                ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
+                : "bg-white/5 border-white/10 text-white/20 cursor-not-allowed"
+            }`}
+          >
+            <BarChart2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Generate Report</span>
+          </button>
+        ) : null}
+
         {/* Language toggle */}
         <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 text-xs">
           <button

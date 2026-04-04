@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatBubble } from "@/components/chat/ChatBubble";
 import { ChatEmptyState } from "@/components/chat/ChatEmptyState";
@@ -13,6 +14,7 @@ export interface Message {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -103,6 +105,15 @@ const Index = () => {
     sendMessage(prompt);
   }
 
+  function handleAnalyze() {
+    localStorage.setItem("chatMessages", JSON.stringify(messages));
+    navigate("/report", {
+      state: {
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      },
+    });
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <ChatHeader
@@ -114,6 +125,8 @@ const Index = () => {
         lang={lang}
         onChangeLang={setLang}
         isSpeaking={isSpeaking}
+        onAnalyze={handleAnalyze}
+        messagesCount={messages.length}
       />
 
       <main className="flex-1 pt-14 pb-28 overflow-y-auto">
