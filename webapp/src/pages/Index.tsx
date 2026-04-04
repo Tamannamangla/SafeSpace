@@ -13,9 +13,20 @@ export interface Message {
   timestamp: Date;
 }
 
+function loadMessages(): Message[] {
+  try {
+    const saved = localStorage.getItem("chatMessages");
+    if (!saved) return [];
+    const parsed = JSON.parse(saved) as Array<{ id: string; role: "user" | "assistant"; content: string; timestamp: string }>;
+    return parsed.map((m) => ({ ...m, timestamp: new Date(m.timestamp) }));
+  } catch {
+    return [];
+  }
+}
+
 const Index = () => {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(loadMessages);
   const [input, setInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -23,6 +34,10 @@ const Index = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    localStorage.setItem("chatMessages", JSON.stringify(messages));
   }, [messages]);
 
   async function sendMessage(text: string) {
