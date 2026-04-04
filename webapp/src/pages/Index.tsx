@@ -47,13 +47,16 @@ const Index = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Load messages from backend on mount
+  // Load messages from backend on mount — always replace localStorage with backend data
   useEffect(() => {
     api.get<Message[]>("/api/messages").then((msgs) => {
       if (msgs && msgs.length > 0) {
         setMessages(msgs.map((m) => ({ ...m, timestamp: new Date(m.timestamp) })));
-        localStorage.removeItem("chatMessages");
+      } else {
+        // New user or no messages — clear any leftover messages from previous user
+        setMessages([]);
       }
+      localStorage.removeItem("chatMessages");
       isInitialLoad.current = false;
     }).catch(() => {
       isInitialLoad.current = false;
@@ -221,7 +224,11 @@ const Index = () => {
           onAnalyze={handleAnalyze}
           messagesCount={messages.length}
           userName={session?.user?.name ?? session?.user?.email ?? undefined}
-          onSignOut={() => signOut().then(() => navigate("/login", { replace: true }))}
+          onSignOut={() => {
+            localStorage.removeItem("chatMessages");
+            localStorage.removeItem("ageGroup");
+            signOut().then(() => navigate("/login", { replace: true }));
+          }}
           isChildMode
         />
 
@@ -278,7 +285,11 @@ const Index = () => {
         onAnalyze={handleAnalyze}
         messagesCount={messages.length}
         userName={session?.user?.name ?? session?.user?.email ?? undefined}
-        onSignOut={() => signOut().then(() => navigate("/login", { replace: true }))}
+        onSignOut={() => {
+          localStorage.removeItem("chatMessages");
+          localStorage.removeItem("ageGroup");
+          signOut().then(() => navigate("/login", { replace: true }));
+        }}
       />
 
       <main className="flex-1 pt-14 pb-28 overflow-y-auto">
