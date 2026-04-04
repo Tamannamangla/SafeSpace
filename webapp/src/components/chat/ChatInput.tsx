@@ -8,10 +8,10 @@ interface ChatInputProps {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
-  isStreaming: boolean;
+  isLoading: boolean;
 }
 
-export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputProps) {
+export function ChatInput({ value, onChange, onSend, isLoading }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const onTranscript = useCallback(
@@ -35,7 +35,7 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (!isStreaming && value.trim()) {
+      if (!isLoading && value.trim()) {
         if (isListening) stop();
         onSend();
       }
@@ -59,7 +59,7 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
     onSend();
   }
 
-  const canSend = !isStreaming && value.trim().length > 0;
+  const canSend = !isLoading && value.trim().length > 0;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 pt-3 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent">
@@ -71,7 +71,7 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder={isListening ? "Listening..." : "Talk to Buddy..."}
-            disabled={isStreaming}
+            disabled={isLoading}
             rows={1}
             className="flex-1 resize-none bg-transparent border-0 p-0 text-sm text-white/85 placeholder:text-white/25 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[160px] overflow-y-auto leading-6 disabled:opacity-50 disabled:cursor-not-allowed"
           />
@@ -79,7 +79,7 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
           {micSupported ? (
             <Button
               onClick={handleMicToggle}
-              disabled={isStreaming}
+              disabled={isLoading}
               size="icon"
               variant="ghost"
               className={`flex-shrink-0 w-8 h-8 rounded-xl transition-all duration-150 shadow-none ${

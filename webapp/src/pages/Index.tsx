@@ -1,14 +1,20 @@
 import { useState, useRef, useEffect } from "react";
-import type { ChatMessage } from "../../../backend/src/types";
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatBubble } from "@/components/chat/ChatBubble";
 import { ChatEmptyState } from "@/components/chat/ChatEmptyState";
 import { ChatInput } from "@/components/chat/ChatInput";
 
+export interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+}
+
 const Index = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
-  const [isStreaming, setIsStreaming] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,56 +23,29 @@ const Index = () => {
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || isStreaming) return;
+    if (!trimmed || isLoading) return;
 
-    const userMessage: ChatMessage = { role: "user", content: trimmed };
-    const allMessages: ChatMessage[] = [...messages, userMessage];
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: trimmed,
+      timestamp: new Date(),
+    };
 
-    setMessages(allMessages);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
-    setIsStreaming(true);
+    setIsLoading(true);
 
-    try {
-      const baseUrl = import.meta.env.VITE_BACKEND_URL || "";
-      const response = await fetch(`${baseUrl}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: allMessages }),
-      });
-
-      if (!response.ok || !response.body) {
-        throw new Error(`Request failed: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = {
-            role: "assistant",
-            content: updated[updated.length - 1].content + chunk,
-          };
-          return updated;
-        });
-      }
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Sorry, something went wrong. Please try again.",
-        },
-      ]);
-    } finally {
-      setIsStreaming(false);
-    }
+    setTimeout(() => {
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "AI will respond here.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+      setIsLoading(false);
+    }, 500);
   }
 
   function handleSend() {
@@ -90,10 +69,10 @@ const Index = () => {
             <div className="flex flex-col gap-5">
               {messages.map((message, index) => (
                 <ChatBubble
-                  key={index}
+                  key={message.id}
                   message={message}
                   isLatest={index === messages.length - 1}
-                  isStreaming={isStreaming}
+                  isLoading={isLoading}
                 />
               ))}
               <div ref={messagesEndRef} />
@@ -106,7 +85,7 @@ const Index = () => {
         value={input}
         onChange={setInput}
         onSend={handleSend}
-        isStreaming={isStreaming}
+        isLoading={isLoading}
       />
     </div>
   );

@@ -1,28 +1,25 @@
-import { Heart, User, Volume2, VolumeX } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useSpeechSynthesis } from "@/hooks/use-speech-synthesis";
-import type { ChatMessage } from "../../../../backend/src/types";
+import { Heart, User } from "lucide-react";
 
-interface ChatBubbleProps {
-  message: ChatMessage;
-  isLatest: boolean;
-  isStreaming: boolean;
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
 }
 
-export function ChatBubble({ message, isLatest, isStreaming }: ChatBubbleProps) {
+interface ChatBubbleProps {
+  message: Message;
+  isLatest: boolean;
+  isLoading: boolean;
+}
+
+export function ChatBubble({ message, isLatest, isLoading }: ChatBubbleProps) {
   const isUser = message.role === "user";
-  const { isSpeaking, isSupported: ttsSupported, speak, stop } = useSpeechSynthesis();
-
-  const showSpeaker =
-    !isUser && ttsSupported && message.content.length > 0 && !(isLatest && isStreaming);
-
-  function handleSpeakerToggle() {
-    if (isSpeaking) {
-      stop();
-    } else {
-      speak(message.content);
-    }
-  }
+  const senderLabel = isUser ? "You" : "Buddy";
+  const timeString = message.timestamp.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   return (
     <div
@@ -43,8 +40,12 @@ export function ChatBubble({ message, isLatest, isStreaming }: ChatBubbleProps) 
         )}
       </div>
 
-      {/* Bubble */}
-      <div className={`relative group max-w-[75%] md:max-w-[65%] ${isUser ? "" : ""}`}>
+      {/* Bubble + meta */}
+      <div className={`flex flex-col gap-1 max-w-[75%] md:max-w-[65%] ${isUser ? "items-end" : "items-start"}`}>
+        {/* Sender label */}
+        <span className="text-[11px] text-white/30 px-1">{senderLabel}</span>
+
+        {/* Bubble */}
         <div
           className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
             isUser
@@ -55,28 +56,12 @@ export function ChatBubble({ message, isLatest, isStreaming }: ChatBubbleProps) 
           {message.content !== "" ? (
             message.content
           ) : (
-            !isUser && isLatest ? <TypingIndicator /> : null
+            !isUser && isLatest && isLoading ? <TypingIndicator /> : null
           )}
         </div>
 
-        {showSpeaker ? (
-          <Button
-            onClick={handleSpeakerToggle}
-            size="icon"
-            variant="ghost"
-            className={`absolute -bottom-1 left-10 w-6 h-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
-              isSpeaking
-                ? "text-blue-400 bg-blue-500/15 hover:bg-blue-500/25 hover:text-blue-300 opacity-100"
-                : "text-white/30 hover:text-white/60 hover:bg-white/[0.06]"
-            }`}
-          >
-            {isSpeaking ? (
-              <VolumeX className="w-3 h-3" />
-            ) : (
-              <Volume2 className="w-3 h-3" />
-            )}
-          </Button>
-        ) : null}
+        {/* Timestamp */}
+        <span className="text-[10px] text-white/20 px-1">{timeString}</span>
       </div>
     </div>
   );
