@@ -9,6 +9,9 @@ const envSchema = z.object({
   PORT: z.string().optional().default("3000"),
   NODE_ENV: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
+  DATABASE_URL: z.string().default("file:./dev.db"),
+  BETTER_AUTH_SECRET: z.string().min(1, "BETTER_AUTH_SECRET is required"),
+  BACKEND_URL: z.string().default("http://localhost:3000"),
 });
 
 /**
