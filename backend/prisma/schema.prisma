@@ -17,6 +17,7 @@ model User {
   updatedAt         DateTime           @updatedAt
   sessions          Session[]
   accounts          Account[]
+  ageGroup          String?
   chatSession       ChatSession?
   savedReports      SavedReport[]
   emotionalMemories EmotionalMemory[]

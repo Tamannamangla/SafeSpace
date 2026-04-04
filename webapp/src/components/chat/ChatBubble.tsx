@@ -12,15 +12,46 @@ interface ChatBubbleProps {
   isLatest: boolean;
   isLoading: boolean;
   isChildMode?: boolean;
+  isTeenMode?: boolean;
 }
 
-export function ChatBubble({ message, isLatest, isLoading, isChildMode }: ChatBubbleProps) {
+export function ChatBubble({ message, isLatest, isLoading, isChildMode, isTeenMode }: ChatBubbleProps) {
   const isUser = message.role === "user";
   const senderLabel = isUser ? "Victim" : "Buddy";
   const timeString = message.timestamp.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  if (isTeenMode) {
+    return (
+      <div className={`flex items-end gap-3 animate-message-in ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-base ${
+          isUser ? "bg-cyan-500/20 border border-cyan-500/30" : "bg-teal-500/15 border border-teal-500/25"
+        }`}>
+          {isUser ? "😎" : "💪"}
+        </div>
+
+        <div className={`flex flex-col gap-1 max-w-[78%] ${isUser ? "items-end" : "items-start"}`}>
+          <span className="text-[11px] text-cyan-200/30 px-1">{senderLabel}</span>
+
+          <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
+            isUser
+              ? "bg-gradient-to-br from-cyan-600 to-teal-600 text-white rounded-br-sm shadow-lg shadow-cyan-900/30"
+              : "bg-white/[0.06] border border-cyan-500/10 text-white/85 rounded-bl-sm"
+          }`}>
+            {message.content !== "" ? (
+              message.content
+            ) : (
+              !isUser && isLatest && isLoading ? <TeenTypingIndicator /> : null
+            )}
+          </div>
+
+          <span className="text-[10px] text-cyan-200/20 px-1">{timeString}</span>
+        </div>
+      </div>
+    );
+  }
 
   if (isChildMode) {
     return (
@@ -124,6 +155,16 @@ function ChildTypingIndicator() {
       <span className="w-3 h-3 rounded-full block animate-typing-dot" style={{ animationDelay: "0ms", background: "#ff69b4" }} />
       <span className="w-3 h-3 rounded-full block animate-typing-dot" style={{ animationDelay: "200ms", background: "#fdd835" }} />
       <span className="w-3 h-3 rounded-full block animate-typing-dot" style={{ animationDelay: "400ms", background: "#4fc3f7" }} />
+    </span>
+  );
+}
+
+function TeenTypingIndicator() {
+  return (
+    <span className="flex items-center gap-1.5 h-5">
+      <span className="w-2 h-2 rounded-full bg-cyan-400/50 block animate-typing-dot" style={{ animationDelay: "0ms" }} />
+      <span className="w-2 h-2 rounded-full bg-teal-400/50 block animate-typing-dot" style={{ animationDelay: "200ms" }} />
+      <span className="w-2 h-2 rounded-full bg-blue-400/50 block animate-typing-dot" style={{ animationDelay: "400ms" }} />
     </span>
   );
 }

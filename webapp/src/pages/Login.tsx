@@ -1,31 +1,20 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, Sparkles } from "lucide-react";
 
-type AgeGroup = "under7" | "above7" | "";
-
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [ageGroup, setAgeGroup] = useState<AgeGroup>("");
-  // Separate boolean so TypeScript doesn't alias-narrow ageGroup inside if (isChildMode)
-  const [isChildMode, setIsChildMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  function handleAgeSelect(age: AgeGroup) {
-    setAgeGroup(age);
-    setIsChildMode(age === "under7");
-  }
 
   async function handleSendOTP(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim() || !ageGroup) return;
+    if (!email.trim()) return;
     setIsLoading(true);
     try {
       const result = await authClient.emailOtp.sendVerificationOtp({
@@ -39,144 +28,16 @@ export default function Login() {
           variant: "destructive",
         });
       } else {
-        localStorage.setItem("ageGroup", ageGroup);
-        navigate("/verify-otp", { state: { email: email.trim(), name: name.trim() } });
+        localStorage.setItem("authMode", "login");
+        navigate("/verify-otp", { state: { email: email.trim() } });
       }
     } finally {
       setIsLoading(false);
     }
   }
 
-  if (isChildMode) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg, #fff9c4 0%, #fce4ec 40%, #e3f2fd 100%)" }}>
-        {/* Floating cartoon blobs */}
-        <div className="pointer-events-none fixed inset-0 overflow-hidden">
-          <div className="absolute top-10 left-10 text-6xl animate-bounce" style={{ animationDuration: "2s" }}>⭐</div>
-          <div className="absolute top-20 right-16 text-5xl animate-bounce" style={{ animationDuration: "2.5s" }}>🌈</div>
-          <div className="absolute bottom-20 left-8 text-5xl animate-bounce" style={{ animationDuration: "3s" }}>🦋</div>
-          <div className="absolute bottom-10 right-10 text-6xl animate-bounce" style={{ animationDuration: "1.8s" }}>🌟</div>
-          <div className="absolute top-1/2 left-4 text-4xl animate-bounce" style={{ animationDuration: "2.2s" }}>🎈</div>
-          <div className="absolute top-1/3 right-4 text-4xl animate-bounce" style={{ animationDuration: "2.8s" }}>🎨</div>
-        </div>
-
-        <div className="relative w-full max-w-sm">
-          {/* Logo */}
-          <div className="mb-8 flex flex-col items-center gap-3">
-            <div className="text-7xl animate-bounce" style={{ animationDuration: "1.5s" }}>🐻</div>
-            <div className="text-center">
-              <h1 className="text-4xl font-black tracking-tight" style={{ color: "#e91e8c", fontFamily: "Comic Sans MS, Chalkboard SE, cursive", textShadow: "2px 2px 0 #ff69b4" }}>Buddy!</h1>
-              <p className="mt-1 text-lg font-bold" style={{ color: "#9c27b0", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>🌈 Your fun friend! 🌈</p>
-            </div>
-          </div>
-
-          {/* Card */}
-          <div className="rounded-3xl border-4 p-6 shadow-2xl" style={{ borderColor: "#ff69b4", background: "rgba(255,255,255,0.9)" }}>
-            <div className="mb-6 text-center">
-              <h2 className="text-2xl font-black" style={{ color: "#e91e8c", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>Let's get started! 🎉</h2>
-              <p className="mt-1 text-base font-semibold" style={{ color: "#9c27b0", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>
-                Tell me your name! 😊
-              </p>
-            </div>
-
-            <form onSubmit={handleSendOTP} className="flex flex-col gap-5">
-              <div className="flex flex-col gap-2">
-                <label className="text-lg font-black" style={{ color: "#e91e8c", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>
-                  👤 Victim name
-                </label>
-                <Input
-                  type="text"
-                  autoComplete="name"
-                  placeholder="What's your name? 😊"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="h-14 text-lg rounded-2xl border-4 font-bold"
-                  style={{ borderColor: "#ff69b4", fontFamily: "Comic Sans MS, Chalkboard SE, cursive", fontSize: "18px", color: "#333" }}
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-lg font-black" style={{ color: "#e91e8c", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>
-                  📧 Email address
-                </label>
-                <Input
-                  type="email"
-                  autoComplete="email"
-                  placeholder="your@email.com 📬"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-14 text-lg rounded-2xl border-4 font-bold"
-                  style={{ borderColor: "#ff69b4", fontFamily: "Comic Sans MS, Chalkboard SE, cursive", fontSize: "18px", color: "#333" }}
-                />
-              </div>
-
-              {/* Age re-selection */}
-              <div className="flex flex-col gap-2">
-                <label className="text-lg font-black" style={{ color: "#e91e8c", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>
-                  🎂 How old are you?
-                </label>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleAgeSelect("under7")}
-                    className="flex-1 py-3 rounded-2xl border-4 text-base font-black transition-all"
-                    style={{
-                      borderColor: "#ff69b4",
-                      background: "#ff69b4",
-                      color: "white",
-                      fontFamily: "Comic Sans MS, Chalkboard SE, cursive",
-                    }}
-                  >
-                    🧒 Under 7
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAgeSelect("above7")}
-                    className="flex-1 py-3 rounded-2xl border-4 text-base font-black transition-all"
-                    style={{
-                      borderColor: "#ddd",
-                      background: "white",
-                      color: "#999",
-                      fontFamily: "Comic Sans MS, Chalkboard SE, cursive",
-                    }}
-                  >
-                    👦 Above 7
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading || !email.trim() || !ageGroup}
-                className="w-full h-14 rounded-2xl text-xl font-black text-white transition-all shadow-lg disabled:opacity-50"
-                style={{
-                  background: "linear-gradient(135deg, #ff69b4, #e91e8c)",
-                  fontFamily: "Comic Sans MS, Chalkboard SE, cursive",
-                  boxShadow: "0 4px 0 #c2185b",
-                }}
-              >
-                {isLoading ? "Sending... ⏳" : "Let's go! 🚀"}
-              </button>
-            </form>
-
-            <p className="mt-5 text-center text-sm font-bold" style={{ color: "#9c27b0", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>
-              We'll send a secret code to your email! 🔑
-            </p>
-          </div>
-
-          <p className="mt-6 text-center text-base font-bold" style={{ color: "#9c27b0", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>
-            No password needed! Just your email 🎈
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
-      {/* Ambient glow blobs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 -left-40 w-80 h-80 rounded-full bg-violet-600/10 blur-3xl" />
         <div className="absolute top-1/2 -right-40 w-96 h-96 rounded-full bg-pink-600/8 blur-3xl" />
@@ -184,7 +45,6 @@ export default function Login() {
       </div>
 
       <div className="relative w-full max-w-sm">
-        {/* Logo and branding */}
         <div className="mb-8 flex flex-col items-center gap-3">
           <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 via-pink-500/20 to-orange-500/20 border border-pink-500/20 shadow-lg shadow-violet-500/10">
             <Heart className="w-7 h-7 text-pink-400" />
@@ -195,32 +55,15 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Card */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-6 shadow-xl shadow-black/40">
           <div className="mb-6">
-            <h2 className="text-base font-semibold text-white/90">Sign in to continue</h2>
+            <h2 className="text-base font-semibold text-white/90">Welcome back</h2>
             <p className="mt-1 text-xs text-white/40">
-              We'll send a one-time code to your email
+              Enter your email to sign in
             </p>
           </div>
 
           <form onSubmit={handleSendOTP} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="name" className="text-xs font-medium text-white/50">
-                Victim name
-              </label>
-              <Input
-                id="name"
-                type="text"
-                autoComplete="name"
-                placeholder="What should we call you?"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-violet-500/50 focus:ring-violet-500/20 h-10"
-              />
-            </div>
-
             <div className="flex flex-col gap-1.5">
               <label htmlFor="email" className="text-xs font-medium text-white/50">
                 Email address
@@ -237,38 +80,9 @@ export default function Login() {
               />
             </div>
 
-            {/* Age group selection */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-white/50">Age group</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAgeGroup("under7")}
-                  className={`flex-1 py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all ${
-                    ageGroup === "under7"
-                      ? "bg-pink-500/20 border-pink-500/50 text-pink-300"
-                      : "bg-white/5 border-white/10 text-white/40 hover:border-white/20 hover:text-white/60"
-                  }`}
-                >
-                  🧒 Under 7 years
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAgeGroup("above7")}
-                  className={`flex-1 py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all ${
-                    ageGroup === "above7"
-                      ? "bg-violet-500/20 border-violet-500/50 text-violet-300"
-                      : "bg-white/5 border-white/10 text-white/40 hover:border-white/20 hover:text-white/60"
-                  }`}
-                >
-                  👦 Above 7 years
-                </button>
-              </div>
-            </div>
-
             <Button
               type="submit"
-              disabled={isLoading || !email.trim() || !ageGroup}
+              disabled={isLoading || !email.trim()}
               className="w-full h-10 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-medium border-0 shadow-lg shadow-violet-500/20 transition-all"
             >
               {isLoading ? (
@@ -286,13 +100,15 @@ export default function Login() {
           </form>
 
           <p className="mt-5 text-center text-xs text-white/25 leading-relaxed">
-            By continuing, you agree to keep this space safe and supportive for everyone.
+            By continuing, you agree to keep this space safe and supportive.
           </p>
         </div>
 
-        {/* Footer note */}
-        <p className="mt-6 text-center text-xs text-white/20">
-          No password needed — just your email
+        <p className="mt-6 text-center text-sm text-white/40">
+          New here?{" "}
+          <Link to="/signup" className="text-violet-400 hover:text-violet-300 font-medium transition-colors">
+            Sign up
+          </Link>
         </p>
       </div>
     </div>

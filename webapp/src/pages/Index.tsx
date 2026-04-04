@@ -41,7 +41,9 @@ const Index = () => {
   const isInitialLoad = useRef(true);
   const { voiceEnabled, setVoiceEnabled, lang, setLang, speak, speakChunk, stop, isSpeaking } = useVoice();
 
-  const isChildMode = localStorage.getItem("ageGroup") === "under7";
+  const ageGroup = localStorage.getItem("ageGroup") || "above18";
+  const isChildMode = ageGroup === "under7";
+  const isTeenMode = ageGroup === "8to18";
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -109,7 +111,7 @@ const Index = () => {
         credentials: "include",
         body: JSON.stringify({
           messages: updatedMessages.map(({ role, content }) => ({ role, content })),
-          ageGroup: localStorage.getItem("ageGroup") || "above7",
+          ageGroup: localStorage.getItem("ageGroup") || "above18",
         }),
       });
 
@@ -266,6 +268,71 @@ const Index = () => {
           onSend={handleSend}
           isLoading={isLoading}
           isChildMode
+        />
+      </div>
+    );
+  }
+
+  if (isTeenMode) {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)" }}>
+        <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+          <div className="absolute -top-32 -left-32 w-72 h-72 rounded-full bg-cyan-500/10 blur-3xl" />
+          <div className="absolute top-1/2 -right-32 w-80 h-80 rounded-full bg-teal-500/8 blur-3xl" />
+          <div className="absolute -bottom-32 left-1/4 w-64 h-64 rounded-full bg-blue-500/8 blur-3xl" />
+        </div>
+
+        <ChatHeader
+          voiceEnabled={voiceEnabled}
+          onToggleVoice={() => {
+            if (voiceEnabled) stop();
+            setVoiceEnabled(!voiceEnabled);
+          }}
+          lang={lang}
+          onChangeLang={setLang}
+          isSpeaking={isSpeaking}
+          onAnalyze={handleAnalyze}
+          messagesCount={messages.length}
+          userName={session?.user?.name ?? session?.user?.email ?? undefined}
+          onSignOut={() => {
+            localStorage.removeItem("chatMessages");
+            localStorage.removeItem("ageGroup");
+            signOut().then(() => navigate("/login", { replace: true }));
+          }}
+          isTeenMode
+        />
+
+        <main className="flex-1 pt-16 pb-32 overflow-y-auto relative z-10">
+          {crisisLevel ? (
+            <CrisisAlert level={crisisLevel} onDismiss={() => setCrisisLevel(null)} />
+          ) : null}
+
+          <div className="max-w-3xl mx-auto px-4 py-6">
+            {messages.length === 0 ? (
+              <ChatEmptyState onPromptClick={handlePromptClick} isTeenMode />
+            ) : (
+              <div className="flex flex-col gap-5">
+                {messages.map((message, index) => (
+                  <ChatBubble
+                    key={message.id}
+                    message={message}
+                    isLatest={index === messages.length - 1}
+                    isLoading={isLoading}
+                    isTeenMode
+                  />
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+        </main>
+
+        <ChatInput
+          value={input}
+          onChange={setInput}
+          onSend={handleSend}
+          isLoading={isLoading}
+          isTeenMode
         />
       </div>
     );

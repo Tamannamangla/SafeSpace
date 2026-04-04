@@ -14,12 +14,45 @@ const CHILD_PROMPTS = [
   "Can you make me happy? 😊",
 ];
 
+const TEEN_PROMPTS = [
+  "I've been feeling stressed about school lately",
+  "Something happened and I need to talk about it",
+  "I'm having issues with friends and don't know what to do",
+  "I just need someone to listen right now",
+];
+
 interface ChatEmptyStateProps {
   onPromptClick: (prompt: string) => void;
   isChildMode?: boolean;
+  isTeenMode?: boolean;
 }
 
-export function ChatEmptyState({ onPromptClick, isChildMode }: ChatEmptyStateProps) {
+export function ChatEmptyState({ onPromptClick, isChildMode, isTeenMode }: ChatEmptyStateProps) {
+  if (isTeenMode) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full px-4 py-12 text-center">
+        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 border border-cyan-500/30 mb-5">
+          <span className="text-3xl">💪</span>
+        </div>
+        <h2 className="text-xl font-semibold text-white/90 mb-2">Hey, I'm Buddy</h2>
+        <p className="text-sm text-cyan-200/50 mb-10 max-w-sm">
+          Your space to talk about anything. No judgment, just real support. ✨
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-lg">
+          {TEEN_PROMPTS.map((prompt) => (
+            <button
+              key={prompt}
+              onClick={() => onPromptClick(prompt)}
+              className="text-left px-4 py-3.5 rounded-xl bg-white/[0.04] border border-cyan-500/15 text-sm text-cyan-100/60 hover:text-cyan-100/90 hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all duration-150 cursor-pointer"
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (isChildMode) {
     return (
       <div className="flex flex-col items-center justify-center h-full px-4 py-12 text-center">

@@ -10,9 +10,10 @@ interface ChatInputProps {
   onSend: () => void;
   isLoading: boolean;
   isChildMode?: boolean;
+  isTeenMode?: boolean;
 }
 
-export function ChatInput({ value, onChange, onSend, isLoading, isChildMode }: ChatInputProps) {
+export function ChatInput({ value, onChange, onSend, isLoading, isChildMode, isTeenMode }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const onTranscript = useCallback(
@@ -61,6 +62,64 @@ export function ChatInput({ value, onChange, onSend, isLoading, isChildMode }: C
   }
 
   const canSend = !isLoading && value.trim().length > 0;
+
+  if (isTeenMode) {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 pt-3" style={{ background: "linear-gradient(to top, #0f172a, #0f172aee, transparent)" }}>
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-end gap-2.5 rounded-2xl px-4 py-3 shadow-2xl transition-colors duration-150"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(6,182,212,0.2)" }}>
+            <Textarea
+              ref={textareaRef}
+              value={value}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              placeholder={isListening ? "Listening..." : "What's on your mind? ✨"}
+              disabled={isLoading}
+              rows={1}
+              className="flex-1 resize-none bg-transparent border-0 p-0 text-sm text-white/85 placeholder:text-cyan-200/25 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[160px] overflow-y-auto leading-6 disabled:opacity-50"
+            />
+
+            {micSupported ? (
+              <Button
+                onClick={handleMicToggle}
+                disabled={isLoading}
+                size="icon"
+                variant="ghost"
+                className={`flex-shrink-0 w-9 h-9 rounded-xl transition-all duration-150 shadow-none ${
+                  isListening
+                    ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                    : "text-cyan-300/40 hover:text-cyan-300/70 hover:bg-white/[0.06]"
+                }`}
+              >
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </Button>
+            ) : null}
+
+            <Button
+              onClick={handleSend}
+              disabled={!canSend}
+              size="icon"
+              className="flex-shrink-0 w-9 h-9 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:bg-white/[0.06] disabled:text-white/20 text-white transition-all duration-150 shadow-none"
+            >
+              <Send className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+
+          {isListening ? (
+            <p className="text-center text-[11px] text-red-400/70 mt-2 flex items-center justify-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+              Listening... tap to stop
+            </p>
+          ) : (
+            <p className="text-center text-[11px] text-cyan-200/20 mt-2">
+              Press Enter to send
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (isChildMode) {
     return (
