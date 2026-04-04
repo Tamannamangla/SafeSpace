@@ -5,6 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { ChatRequestSchema } from "../types";
 import { auth } from "../auth";
 import { extractAndSaveEmotions, loadEmotionalContext } from "../lib/emotional-memory";
+import { detectCrisis, getCrisisPromptInjection } from "../lib/crisis-detection";
 
 const chatRouter = new Hono<{
   Variables: {
@@ -32,6 +33,10 @@ Rules you must always follow:
 - Never judge, minimize, or lecture. Your role is to listen, support, and carefully understand their full situation.
 - If they share something serious (abuse, danger, trauma), respond with deep empathy and ask follow-up questions with care to understand more.`;
 
+// Prefix markers sent before the AI response so the frontend can detect crisis level
+const CRISIS_MARKER_PREFIX = "[[CRISIS:";
+const CRISIS_MARKER_SUFFIX = "]]";
+
 chatRouter.post(
   "/",
   zValidator("json", ChatRequestSchema),
@@ -43,20 +48,36 @@ chatRouter.post(
     const { messages } = c.req.valid("json");
     const user = c.get("user");
 
-    // Load emotional memory context if user is logged in
+    // --- Crisis detection (runs <1ms, pattern matching only) ---
+    const crisis = detectCrisis(messages);
+    const crisisInjection = getCrisisPromptInjection(crisis.level);
+
+    // --- Build system prompt ---
     let systemPrompt = BASE_SYSTEM_PROMPT;
+
+    // Add emotional memory context if user is logged in
     if (user) {
       try {
         const emotionalContext = await loadEmotionalContext(user.id);
         if (emotionalContext) {
-          systemPrompt = BASE_SYSTEM_PROMPT + "\n" + emotionalContext;
+          systemPrompt += "\n" + emotionalContext;
         }
       } catch {
         // If memory loading fails, just use the base prompt
       }
     }
 
+    // Add crisis instructions if detected
+    if (crisisInjection) {
+      systemPrompt += "\n" + crisisInjection;
+    }
+
     return streamText(c, async (stream) => {
+      // Send crisis level marker as the first bytes so the frontend can react immediately
+      if (crisis.level !== "none") {
+        await stream.write(`${CRISIS_MARKER_PREFIX}${crisis.level}${CRISIS_MARKER_SUFFIX}`);
+      }
+
       const anthropicStream = client.messages.stream({
         model: "claude-opus-4-6",
         max_tokens: 4096,

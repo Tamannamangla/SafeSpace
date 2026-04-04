@@ -4,6 +4,7 @@ import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatBubble } from "@/components/chat/ChatBubble";
 import { ChatEmptyState } from "@/components/chat/ChatEmptyState";
 import { ChatInput } from "@/components/chat/ChatInput";
+import { CrisisAlert, type CrisisLevel } from "@/components/chat/CrisisAlert";
 import { useVoice } from "@/hooks/useVoice";
 import { api } from "@/lib/api";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -26,12 +27,16 @@ function loadMessages(): Message[] {
   }
 }
 
+// Parse crisis marker from beginning of stream: [[CRISIS:level]]
+const CRISIS_REGEX = /^\[\[CRISIS:(concern|high|critical)\]\]/;
+
 const Index = () => {
   const navigate = useNavigate();
   const { data: session } = useSession();
   const [messages, setMessages] = useState<Message[]>(loadMessages);
   const [input, setInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [crisisLevel, setCrisisLevel] = useState<CrisisLevel | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isInitialLoad = useRef(true);
   const { voiceEnabled, setVoiceEnabled, lang, setLang, speak, speakChunk, stop, isSpeaking } = useVoice();
@@ -109,20 +114,38 @@ const Index = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulated = "";
-      let spokenUpTo = 0; // index into accumulated that has already been queued for speech
+      let spokenUpTo = 0;
+      let crisisChecked = false;
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         accumulated += decoder.decode(value, { stream: true });
+
+        // Check for crisis marker in the first chunk
+        if (!crisisChecked) {
+          const match = accumulated.match(CRISIS_REGEX);
+          if (match) {
+            setCrisisLevel(match[1] as CrisisLevel);
+            accumulated = accumulated.replace(CRISIS_REGEX, "");
+            crisisChecked = true;
+          } else if (accumulated.length > 30) {
+            // No marker found after enough bytes — no crisis
+            crisisChecked = true;
+          }
+        }
+
+        // Strip marker from display text
+        const displayText = crisisChecked ? accumulated : accumulated.replace(CRISIS_REGEX, "");
+
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantId ? { ...m, content: accumulated } : m
+            m.id === assistantId ? { ...m, content: displayText } : m
           )
         );
 
         // Speak each complete sentence as it arrives
-        const completeSentences = accumulated.slice(spokenUpTo).match(/[^.!?]+[.!?]+[\s]*/g);
+        const completeSentences = displayText.slice(spokenUpTo).match(/[^.!?]+[.!?]+[\s]*/g);
         if (completeSentences) {
           const spoken = completeSentences.join("");
           speakChunk(spoken);
@@ -130,10 +153,18 @@ const Index = () => {
         }
       }
 
+      // Final cleanup of accumulated text
+      const finalText = accumulated.replace(CRISIS_REGEX, "");
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId ? { ...m, content: finalText } : m
+        )
+      );
+
       // Speak any trailing text that didn't end with punctuation
-      const remainder = accumulated.slice(spokenUpTo).trim();
+      const remainder = finalText.slice(spokenUpTo).trim();
       if (remainder) speakChunk(remainder);
-    } catch (err) {
+    } catch {
       const errorText = "Sorry, I had trouble responding. Please try again.";
       setMessages((prev) =>
         prev.map((m) =>
@@ -182,6 +213,14 @@ const Index = () => {
       />
 
       <main className="flex-1 pt-14 pb-28 overflow-y-auto">
+        {/* Crisis alert banner */}
+        {crisisLevel ? (
+          <CrisisAlert
+            level={crisisLevel}
+            onDismiss={() => setCrisisLevel(null)}
+          />
+        ) : null}
+
         <div className="max-w-3xl mx-auto px-4 py-6">
           {messages.length === 0 ? (
             <ChatEmptyState onPromptClick={handlePromptClick} />
