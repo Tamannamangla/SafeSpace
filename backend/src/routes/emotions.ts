@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { auth } from "../auth";
 import { prisma } from "../prisma";
+import { safeDecrypt } from "../lib/encryption";
 
 const emotionsRouter = new Hono<{
   Variables: {
@@ -62,7 +63,7 @@ emotionsRouter.get("/", async (c) => {
     id: m.id,
     emotion: m.emotion,
     trigger: m.trigger,
-    event: m.event,
+    event: safeDecrypt(m.event),
     intensity: m.intensity,
     createdAt: m.createdAt,
   }));

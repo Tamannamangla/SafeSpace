@@ -10,6 +10,7 @@ import { messagesRouter } from "./routes/messages";
 import { reportsRouter } from "./routes/reports";
 import { emotionsRouter } from "./routes/emotions";
 import { logger } from "hono/logger";
+import { securityHeaders, rateLimit } from "./lib/security";
 
 const app = new Hono<{
   Variables: {
@@ -17,6 +18,9 @@ const app = new Hono<{
     session: typeof auth.$Infer.Session.session | null;
   };
 }>();
+
+// Security headers on all responses
+app.use("*", securityHeaders);
 
 // CORS middleware - validates origin against allowlist
 const allowed = [
@@ -39,6 +43,11 @@ app.use(
 
 // Logging
 app.use("*", logger());
+
+// Rate limiting — different limits per endpoint sensitivity
+app.use("/api/chat/*", rateLimit(20, 60_000));            // 20 chat messages/min
+app.use("/api/analyze/*", rateLimit(5, 60_000));           // 5 report generations/min
+app.use("/api/auth/*", rateLimit(10, 60_000));             // 10 auth attempts/min
 
 // Auth middleware - populates user/session for all routes
 app.use("*", async (c, next) => {

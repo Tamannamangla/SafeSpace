@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { auth } from "../auth";
 import { prisma } from "../prisma";
+import { encrypt, safeDecrypt } from "../lib/encryption";
 
 const reportsRouter = new Hono<{
   Variables: {
@@ -34,7 +35,8 @@ reportsRouter.get("/:id", async (c) => {
 
   if (!report) return c.json({ error: { message: "Not found" } }, 404);
 
-  return c.json({ data: { ...report, reportData: JSON.parse(report.reportData) } });
+  const decryptedData = safeDecrypt(report.reportData);
+  return c.json({ data: { ...report, reportData: JSON.parse(decryptedData) } });
 });
 
 // POST /api/reports - save a new report
@@ -45,11 +47,13 @@ reportsRouter.post("/", async (c) => {
   const body = await c.req.json();
   const { sessionId, reportData, riskLevel, wellbeing } = body;
 
+  const encryptedData = encrypt(JSON.stringify(reportData));
+
   const saved = await prisma.savedReport.create({
     data: {
       userId: user.id,
       sessionId: sessionId ?? "unknown",
-      reportData: JSON.stringify(reportData),
+      reportData: encryptedData,
       riskLevel: riskLevel ?? "low",
       wellbeing: wellbeing ?? 5,
     },

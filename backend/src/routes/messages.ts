@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { auth } from "../auth";
 import { prisma } from "../prisma";
+import { encrypt, safeDecrypt } from "../lib/encryption";
 
 const messagesRouter = new Hono<{
   Variables: {
@@ -18,7 +19,7 @@ messagesRouter.get("/", async (c) => {
     where: { userId: user.id },
   });
 
-  const messages = session ? JSON.parse(session.messages) : [];
+  const messages = session ? JSON.parse(safeDecrypt(session.messages)) : [];
   return c.json({ data: messages });
 });
 
@@ -29,11 +30,12 @@ messagesRouter.put("/", async (c) => {
 
   const body = await c.req.json();
   const messages = body.messages ?? [];
+  const encrypted = encrypt(JSON.stringify(messages));
 
   await prisma.chatSession.upsert({
     where: { userId: user.id },
-    update: { messages: JSON.stringify(messages) },
-    create: { userId: user.id, messages: JSON.stringify(messages) },
+    update: { messages: encrypted },
+    create: { userId: user.id, messages: encrypted },
   });
 
   return c.json({ data: { ok: true } });
@@ -46,11 +48,12 @@ messagesRouter.post("/", async (c) => {
 
   const body = await c.req.json();
   const messages = body.messages ?? [];
+  const encrypted = encrypt(JSON.stringify(messages));
 
   await prisma.chatSession.upsert({
     where: { userId: user.id },
-    update: { messages: JSON.stringify(messages) },
-    create: { userId: user.id, messages: JSON.stringify(messages) },
+    update: { messages: encrypted },
+    create: { userId: user.id, messages: encrypted },
   });
 
   return c.json({ data: { ok: true } });

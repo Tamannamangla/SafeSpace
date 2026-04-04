@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "../prisma";
+import { encrypt, safeDecrypt } from "./encryption";
+import { scrubPII } from "./pii-scrubber";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -14,6 +16,8 @@ interface ExtractedEmotion {
 
 /**
  * Extracts emotional patterns from recent messages and saves them to the user's memory graph.
+ * - PII is scrubbed from event descriptions before storage
+ * - Event descriptions are encrypted at rest
  * Runs in the background — never blocks the chat response.
  */
 export async function extractAndSaveEmotions(
@@ -39,7 +43,7 @@ export async function extractAndSaveEmotions(
 Return ONLY a JSON array of emotional entries. Each entry has:
 - "emotion": the core emotion (anxiety, sadness, joy, fear, anger, guilt, shame, loneliness, hope, frustration, grief, confusion)
 - "trigger": the category/context that triggered it (work, relationship, family, health, finance, school, loss, trauma, self-image, social)
-- "event": a brief description of the specific event/situation (max 50 words)
+- "event": a brief, ANONYMIZED description of the event/situation (max 50 words). Do NOT include any names, emails, phone numbers, or identifying details. Use generic terms like "a friend", "a family member", "their partner".
 - "intensity": 1-10 how strong the emotion appears
 
 If no clear emotions are detected, return an empty array [].
@@ -62,13 +66,13 @@ Return ONLY valid JSON, no markdown, no explanation.`,
 
     if (!Array.isArray(emotions) || emotions.length === 0) return;
 
-    // Save each emotional entry to the database
+    // Save each emotional entry — PII scrubbed + event encrypted
     await prisma.emotionalMemory.createMany({
       data: emotions.slice(0, 5).map((e) => ({
         userId,
         emotion: String(e.emotion).toLowerCase().slice(0, 50),
         trigger: String(e.trigger).toLowerCase().slice(0, 50),
-        event: String(e.event).slice(0, 200),
+        event: encrypt(scrubPII(String(e.event).slice(0, 200))),
         intensity: Math.min(10, Math.max(1, Math.round(Number(e.intensity) || 5))),
       })),
     });
@@ -98,7 +102,8 @@ export async function loadEmotionalContext(userId: string): Promise<string> {
     emotionCounts[m.emotion] = (emotionCounts[m.emotion] || 0) + 1;
     triggerCounts[m.trigger] = (triggerCounts[m.trigger] || 0) + 1;
     if (recentEvents.length < 5) {
-      recentEvents.push(`- Felt ${m.emotion} (intensity ${m.intensity}/10) about "${m.event}" [trigger: ${m.trigger}]`);
+      const decryptedEvent = safeDecrypt(m.event);
+      recentEvents.push(`- Felt ${m.emotion} (intensity ${m.intensity}/10) about "${decryptedEvent}" [trigger: ${m.trigger}]`);
     }
   }
 
