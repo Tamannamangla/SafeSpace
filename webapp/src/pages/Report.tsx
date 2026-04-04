@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   RadarChart,
   Radar,
@@ -121,14 +121,15 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 export default function Report() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { id: reportId } = useParams<{ id: string }>();
   const reportRef = useRef<HTMLDivElement>(null);
 
   const [report, setReport] = useState<AnalysisReport | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false);
-  const [sessionId] = useState<string>(() => randomHex(8));
-  const [reportDate] = useState<string>(() =>
+  const [sessionId, setSessionId] = useState<string>(() => randomHex(8));
+  const [reportDate, setReportDate] = useState<string>(() =>
     new Date().toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "long",
@@ -137,6 +138,22 @@ export default function Report() {
   );
 
   useEffect(() => {
+    // If we have a report ID in the URL, load saved report from backend
+    if (reportId) {
+      api.get<{ id: string; sessionId: string; reportData: AnalysisReport; createdAt: string }>(`/api/reports/${reportId}`)
+        .then((saved) => {
+          setReport(saved.reportData);
+          setSessionId(saved.sessionId);
+          setReportDate(new Date(saved.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" }));
+        })
+        .catch(() => {
+          setError("Could not load this report. It may have been deleted.");
+        })
+        .finally(() => setLoading(false));
+      return;
+    }
+
+    // Otherwise, generate a new report from chat messages
     let messages: AnalysisMessage[] | null = null;
 
     const stateMessages = (location.state as { messages?: AnalysisMessage[] } | null)?.messages;
@@ -180,7 +197,7 @@ export default function Report() {
     }
 
     void fetchReport();
-  }, [location.state]);
+  }, [location.state, reportId]);
 
   async function downloadPDF() {
     if (!reportRef.current) return;
@@ -292,11 +309,11 @@ export default function Report() {
       {/* Top bar */}
       <div className="sticky top-0 z-40 flex items-center justify-between px-4 md:px-8 h-14 border-b border-white/5 bg-[#0a0a0a]/90 backdrop-blur-md">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate(reportId ? "/profile" : "/")}
           className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white/90 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Chat
+          {reportId ? "Back to Profile" : "Back to Chat"}
         </button>
         <Button
           onClick={downloadPDF}

@@ -11,6 +11,7 @@ export default function VerifyOtp() {
   const location = useLocation();
   const { toast } = useToast();
   const email: string = (location.state as { email?: string })?.email ?? "";
+  const name: string = (location.state as { name?: string })?.name ?? "";
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -36,6 +37,10 @@ export default function VerifyOtp() {
           variant: "destructive",
         });
       } else {
+        // Update name if provided during signup
+        if (name) {
+          await authClient.updateUser({ name }).catch(() => {});
+        }
         navigate("/", { replace: true });
       }
     } finally {

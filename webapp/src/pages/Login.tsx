@@ -9,6 +9,7 @@ import { Heart, Sparkles } from "lucide-react";
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,7 +29,7 @@ export default function Login() {
           variant: "destructive",
         });
       } else {
-        navigate("/verify-otp", { state: { email: email.trim() } });
+        navigate("/verify-otp", { state: { email: email.trim(), name: name.trim() } });
       }
     } finally {
       setIsLoading(false);
@@ -66,6 +67,22 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSendOTP} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="name" className="text-xs font-medium text-white/50">
+                Your name
+              </label>
+              <Input
+                id="name"
+                type="text"
+                autoComplete="name"
+                placeholder="What should we call you?"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-violet-500/50 focus:ring-violet-500/20 h-10"
+              />
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <label htmlFor="email" className="text-xs font-medium text-white/50">
                 Email address
