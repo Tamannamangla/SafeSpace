@@ -11,15 +11,56 @@ interface ChatBubbleProps {
   message: Message;
   isLatest: boolean;
   isLoading: boolean;
+  isChildMode?: boolean;
 }
 
-export function ChatBubble({ message, isLatest, isLoading }: ChatBubbleProps) {
+export function ChatBubble({ message, isLatest, isLoading, isChildMode }: ChatBubbleProps) {
   const isUser = message.role === "user";
-  const senderLabel = isUser ? "You" : "Buddy";
+  const senderLabel = isUser ? "Victim" : "Buddy";
   const timeString = message.timestamp.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  if (isChildMode) {
+    return (
+      <div className={`flex items-end gap-3 animate-message-in ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+        {/* Avatar */}
+        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-2xl"
+          style={{ background: isUser ? "#e1bee7" : "#fff9c4", border: `3px solid ${isUser ? "#ce93d8" : "#fdd835"}` }}>
+          {isUser ? "😊" : "🐻"}
+        </div>
+
+        {/* Bubble + meta */}
+        <div className={`flex flex-col gap-1 max-w-[80%] ${isUser ? "items-end" : "items-start"}`}>
+          <span className="text-xs font-black px-1" style={{ color: isUser ? "#7b1fa2" : "#f57f17", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>
+            {senderLabel}
+          </span>
+
+          <div className="px-4 py-3 rounded-3xl text-base leading-relaxed whitespace-pre-wrap break-words shadow-md"
+            style={{
+              background: isUser
+                ? "linear-gradient(135deg, #ce93d8, #ba68c8)"
+                : "white",
+              color: isUser ? "white" : "#333",
+              fontFamily: "Comic Sans MS, Chalkboard SE, cursive",
+              fontWeight: 600,
+              fontSize: "16px",
+              border: isUser ? "none" : "3px solid #fff176",
+              borderRadius: isUser ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
+            }}>
+            {message.content !== "" ? (
+              message.content
+            ) : (
+              !isUser && isLatest && isLoading ? <ChildTypingIndicator /> : null
+            )}
+          </div>
+
+          <span className="text-xs font-bold px-1" style={{ color: "#999", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>{timeString}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -73,6 +114,16 @@ function TypingIndicator() {
       <span className="w-1.5 h-1.5 rounded-full bg-white/40 block animate-typing-dot" style={{ animationDelay: "0ms" }} />
       <span className="w-1.5 h-1.5 rounded-full bg-white/40 block animate-typing-dot" style={{ animationDelay: "200ms" }} />
       <span className="w-1.5 h-1.5 rounded-full bg-white/40 block animate-typing-dot" style={{ animationDelay: "400ms" }} />
+    </span>
+  );
+}
+
+function ChildTypingIndicator() {
+  return (
+    <span className="flex items-center gap-2 h-6">
+      <span className="w-3 h-3 rounded-full block animate-typing-dot" style={{ animationDelay: "0ms", background: "#ff69b4" }} />
+      <span className="w-3 h-3 rounded-full block animate-typing-dot" style={{ animationDelay: "200ms", background: "#fdd835" }} />
+      <span className="w-3 h-3 rounded-full block animate-typing-dot" style={{ animationDelay: "400ms", background: "#4fc3f7" }} />
     </span>
   );
 }

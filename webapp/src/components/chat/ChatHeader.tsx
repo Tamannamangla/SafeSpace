@@ -12,10 +12,78 @@ interface ChatHeaderProps {
   messagesCount?: number;
   userName?: string;
   onSignOut?: () => void;
+  isChildMode?: boolean;
 }
 
-export function ChatHeader({ voiceEnabled, onToggleVoice, lang, onChangeLang, isSpeaking, onAnalyze, messagesCount = 0, userName, onSignOut }: ChatHeaderProps) {
+export function ChatHeader({ voiceEnabled, onToggleVoice, lang, onChangeLang, isSpeaking, onAnalyze, messagesCount = 0, userName, onSignOut, isChildMode }: ChatHeaderProps) {
   const navigate = useNavigate();
+
+  if (isChildMode) {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-6 h-16 shadow-md"
+        style={{ background: "linear-gradient(135deg, #fff9c4, #fce4ec, #e3f2fd)", borderBottom: "3px solid #ff69b4" }}>
+        <div className="flex items-center gap-2">
+          <span className="text-3xl">🐻</span>
+          <span className="text-xl font-black" style={{ color: "#e91e8c", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>Buddy</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Report button */}
+          {onAnalyze !== undefined ? (
+            <button
+              onClick={onAnalyze}
+              disabled={messagesCount === 0}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-black transition-all disabled:opacity-30"
+              style={{
+                background: messagesCount > 0 ? "#4fc3f7" : "#e0e0e0",
+                color: messagesCount > 0 ? "white" : "#999",
+                fontFamily: "Comic Sans MS, Chalkboard SE, cursive",
+                border: "2px solid " + (messagesCount > 0 ? "#29b6f6" : "#ccc"),
+              }}
+            >
+              <BarChart2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Report</span>
+            </button>
+          ) : null}
+
+          {/* Voice toggle */}
+          <button
+            onClick={onToggleVoice}
+            className="flex items-center justify-center w-10 h-10 rounded-xl transition-all"
+            style={{
+              background: voiceEnabled ? "#ff69b4" : "white",
+              color: voiceEnabled ? "white" : "#999",
+              border: "2px solid " + (voiceEnabled ? "#e91e8c" : "#ddd"),
+            }}
+          >
+            {voiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+          </button>
+
+          {/* Sign out */}
+          {onSignOut !== undefined ? (
+            <button
+              onClick={onSignOut}
+              className="flex items-center justify-center w-10 h-10 rounded-xl transition-all"
+              style={{ background: "white", border: "2px solid #ddd", color: "#999" }}
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          ) : null}
+
+          {/* Profile */}
+          <button
+            onClick={() => navigate("/profile")}
+            className="flex items-center justify-center w-10 h-10 rounded-xl transition-all"
+            style={{ background: "#e1bee7", border: "2px solid #ce93d8", color: "#7b1fa2" }}
+          >
+            <User className="w-5 h-5" />
+          </button>
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-6 h-14 border-b border-white/5 bg-[#0a0a0a]/90 backdrop-blur-md">
       <div className="flex items-center gap-2.5">

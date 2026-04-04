@@ -7,6 +7,7 @@ export const ChatMessageSchema = z.object({
 
 export const ChatRequestSchema = z.object({
   messages: z.array(ChatMessageSchema),
+  ageGroup: z.enum(["under7", "above7"]).optional(),
 });
 
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;

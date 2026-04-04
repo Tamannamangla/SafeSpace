@@ -41,6 +41,8 @@ const Index = () => {
   const isInitialLoad = useRef(true);
   const { voiceEnabled, setVoiceEnabled, lang, setLang, speak, speakChunk, stop, isSpeaking } = useVoice();
 
+  const isChildMode = localStorage.getItem("ageGroup") === "under7";
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -104,6 +106,7 @@ const Index = () => {
         credentials: "include",
         body: JSON.stringify({
           messages: updatedMessages.map(({ role, content }) => ({ role, content })),
+          ageGroup: localStorage.getItem("ageGroup") || "above7",
         }),
       });
 
@@ -193,6 +196,72 @@ const Index = () => {
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
       },
     });
+  }
+
+  if (isChildMode) {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(180deg, #fff9c4 0%, #fce4ec 50%, #e3f2fd 100%)" }}>
+        {/* Floating decorations */}
+        <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+          <div className="absolute top-20 left-4 text-4xl animate-bounce" style={{ animationDuration: "3s" }}>⭐</div>
+          <div className="absolute top-40 right-6 text-3xl animate-bounce" style={{ animationDuration: "3.5s" }}>🌈</div>
+          <div className="absolute bottom-40 left-6 text-3xl animate-bounce" style={{ animationDuration: "4s" }}>🦋</div>
+          <div className="absolute bottom-32 right-4 text-4xl animate-bounce" style={{ animationDuration: "2.5s" }}>🎈</div>
+        </div>
+
+        <ChatHeader
+          voiceEnabled={voiceEnabled}
+          onToggleVoice={() => {
+            if (voiceEnabled) stop();
+            setVoiceEnabled(!voiceEnabled);
+          }}
+          lang={lang}
+          onChangeLang={setLang}
+          isSpeaking={isSpeaking}
+          onAnalyze={handleAnalyze}
+          messagesCount={messages.length}
+          userName={session?.user?.name ?? session?.user?.email ?? undefined}
+          onSignOut={() => signOut().then(() => navigate("/login", { replace: true }))}
+          isChildMode
+        />
+
+        <main className="flex-1 pt-16 pb-32 overflow-y-auto relative z-10">
+          {crisisLevel ? (
+            <CrisisAlert
+              level={crisisLevel}
+              onDismiss={() => setCrisisLevel(null)}
+            />
+          ) : null}
+
+          <div className="max-w-3xl mx-auto px-4 py-6">
+            {messages.length === 0 ? (
+              <ChatEmptyState onPromptClick={handlePromptClick} isChildMode />
+            ) : (
+              <div className="flex flex-col gap-5">
+                {messages.map((message, index) => (
+                  <ChatBubble
+                    key={message.id}
+                    message={message}
+                    isLatest={index === messages.length - 1}
+                    isLoading={isLoading}
+                    isChildMode
+                  />
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+        </main>
+
+        <ChatInput
+          value={input}
+          onChange={setInput}
+          onSend={handleSend}
+          isLoading={isLoading}
+          isChildMode
+        />
+      </div>
+    );
   }
 
   return (

@@ -9,9 +9,10 @@ interface ChatInputProps {
   onChange: (value: string) => void;
   onSend: () => void;
   isLoading: boolean;
+  isChildMode?: boolean;
 }
 
-export function ChatInput({ value, onChange, onSend, isLoading }: ChatInputProps) {
+export function ChatInput({ value, onChange, onSend, isLoading, isChildMode }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const onTranscript = useCallback(
@@ -60,6 +61,72 @@ export function ChatInput({ value, onChange, onSend, isLoading }: ChatInputProps
   }
 
   const canSend = !isLoading && value.trim().length > 0;
+
+  if (isChildMode) {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 pt-3"
+        style={{ background: "linear-gradient(to top, #fff9c4, #fff9c4ee, transparent)" }}>
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-end gap-2 rounded-2xl px-4 py-3 shadow-lg"
+            style={{ background: "white", border: "3px solid #ff69b4" }}>
+            <Textarea
+              ref={textareaRef}
+              value={value}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              placeholder={isListening ? "I'm listening... 👂" : "Tell me how you feel... 💬"}
+              disabled={isLoading}
+              rows={1}
+              className="flex-1 resize-none bg-transparent border-0 p-0 text-base placeholder:text-pink-300 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[28px] max-h-[100px] overflow-y-auto leading-7 disabled:opacity-50"
+              style={{ fontFamily: "Comic Sans MS, Chalkboard SE, cursive", fontWeight: 600, color: "#333", fontSize: "16px" }}
+            />
+
+            {micSupported ? (
+              <button
+                onClick={handleMicToggle}
+                disabled={isLoading}
+                className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all"
+                style={{
+                  background: isListening ? "#ef5350" : "#e1bee7",
+                  color: isListening ? "white" : "#7b1fa2",
+                  border: `2px solid ${isListening ? "#c62828" : "#ce93d8"}`,
+                }}
+              >
+                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </button>
+            ) : null}
+
+            <button
+              onClick={handleSend}
+              disabled={!canSend}
+              className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all disabled:opacity-30"
+              style={{
+                background: canSend ? "linear-gradient(135deg, #ff69b4, #e91e8c)" : "#eee",
+                color: canSend ? "white" : "#ccc",
+                border: canSend ? "2px solid #e91e8c" : "2px solid #ddd",
+                boxShadow: canSend ? "0 2px 0 #c2185b" : "none",
+              }}
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
+
+          {isListening ? (
+            <p className="text-center text-sm font-bold mt-2 flex items-center justify-center gap-2"
+              style={{ color: "#ef5350", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>
+              <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+              Listening... tap to stop! 🎤
+            </p>
+          ) : (
+            <p className="text-center text-sm font-bold mt-2"
+              style={{ color: "#ce93d8", fontFamily: "Comic Sans MS, Chalkboard SE, cursive" }}>
+              Press Enter to send! 🚀
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 pt-3 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent">
