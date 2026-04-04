@@ -19,7 +19,7 @@ const Index = () => {
   const [input, setInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { voiceEnabled, setVoiceEnabled, lang, setLang, speak, stop, isSpeaking } = useVoice();
+  const { voiceEnabled, setVoiceEnabled, lang, setLang, speak, speakChunk, stop, isSpeaking } = useVoice();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -70,6 +70,7 @@ const Index = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulated = "";
+      let spokenUpTo = 0; // index into accumulated that has already been queued for speech
 
       while (true) {
         const { done, value } = await reader.read();
@@ -80,10 +81,19 @@ const Index = () => {
             m.id === assistantId ? { ...m, content: accumulated } : m
           )
         );
+
+        // Speak each complete sentence as it arrives
+        const completeSentences = accumulated.slice(spokenUpTo).match(/[^.!?]+[.!?]+[\s]*/g);
+        if (completeSentences) {
+          const spoken = completeSentences.join("");
+          speakChunk(spoken);
+          spokenUpTo += spoken.length;
+        }
       }
 
-      // Speak the full response once streaming is complete
-      speak(accumulated);
+      // Speak any trailing text that didn't end with punctuation
+      const remainder = accumulated.slice(spokenUpTo).trim();
+      if (remainder) speakChunk(remainder);
     } catch (err) {
       const errorText = "Sorry, I had trouble responding. Please try again.";
       setMessages((prev) =>
