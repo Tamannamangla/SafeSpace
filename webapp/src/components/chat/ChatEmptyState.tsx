@@ -1,10 +1,10 @@
 import { Heart } from "lucide-react";
 
 const SUGGESTED_PROMPTS = [
-  "Hey Buddy, I'm feeling a bit low today",
-  "Can you cheer me up with something nice?",
-  "I need someone to talk to right now",
-  "Tell me something that'll make me smile",
+  "I want to report an incident that happened to me",
+  "I need legal guidance about something I experienced",
+  "Someone hurt me and I don't know what to do next",
+  "I have evidence of a crime and need help",
 ];
 
 const CHILD_PROMPTS = [
@@ -15,10 +15,10 @@ const CHILD_PROMPTS = [
 ];
 
 const TEEN_PROMPTS = [
-  "I've been feeling stressed about school lately",
-  "Something happened and I need to talk about it",
-  "I'm having issues with friends and don't know what to do",
-  "I just need someone to listen right now",
+  "Something bad happened to me and I need help",
+  "Someone did something wrong to me",
+  "I want to tell someone what happened",
+  "I don't feel safe and need to talk about it",
 ];
 
 interface ChatEmptyStateProps {
@@ -34,9 +34,9 @@ export function ChatEmptyState({ onPromptClick, isChildMode, isTeenMode }: ChatE
         <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 border border-cyan-500/30 mb-5">
           <span className="text-3xl">💪</span>
         </div>
-        <h2 className="text-xl font-semibold text-white/90 mb-2">Hey, I'm Buddy</h2>
+        <h2 className="text-xl font-semibold text-white/90 mb-2">Hey, I'm Buddy — Your Safe Space</h2>
         <p className="text-sm text-cyan-200/50 mb-10 max-w-sm">
-          Your space to talk about anything. No judgment, just real support. ✨
+          I'm here to listen and help you share what happened. Take your time, you're safe here. 💙
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-lg">
           {TEEN_PROMPTS.map((prompt) => (
@@ -96,9 +96,9 @@ export function ChatEmptyState({ onPromptClick, isChildMode, isTeenMode }: ChatE
       <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500/20 to-orange-500/20 border border-pink-500/20 mb-5">
         <Heart className="w-6 h-6 text-pink-400" />
       </div>
-      <h2 className="text-xl font-semibold text-white/90 mb-2">Hey there, friend!</h2>
+      <h2 className="text-xl font-semibold text-white/90 mb-2">Buddy — Your Support Companion</h2>
       <p className="text-sm text-white/40 mb-10 max-w-sm">
-        I'm Buddy — your caring companion. Talk to me about anything. I'm always here to listen.
+        I'm here to help you document and understand your situation. Everything you share is important.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-lg">
         {SUGGESTED_PROMPTS.map((prompt) => (
