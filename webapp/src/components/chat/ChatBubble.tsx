@@ -1,4 +1,4 @@
-import { Bot, User, Volume2, VolumeX } from "lucide-react";
+import { Heart, User, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSpeechSynthesis } from "@/hooks/use-speech-synthesis";
 import type { ChatMessage } from "../../../../backend/src/types";
@@ -33,13 +33,13 @@ export function ChatBubble({ message, isLatest, isStreaming }: ChatBubbleProps) 
         className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${
           isUser
             ? "bg-violet-500/20 border border-violet-500/30"
-            : "bg-blue-500/10 border border-blue-500/20"
+            : "bg-pink-500/10 border border-pink-500/20"
         }`}
       >
         {isUser ? (
           <User className="w-3.5 h-3.5 text-violet-400" />
         ) : (
-          <Bot className="w-3.5 h-3.5 text-blue-400" />
+          <Heart className="w-3.5 h-3.5 text-pink-400" />
         )}
       </div>
 

@@ -64,13 +64,13 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
   return (
     <div className="fixed bottom-0 left-0 right-0 px-4 pb-4 pt-3 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent">
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-end gap-2.5 bg-[#141414] border border-white/[0.09] rounded-2xl px-4 py-3 shadow-2xl focus-within:border-violet-500/40 transition-colors duration-150">
+        <div className="flex items-end gap-2.5 bg-[#141414] border border-white/[0.09] rounded-2xl px-4 py-3 shadow-2xl focus-within:border-pink-500/40 transition-colors duration-150">
           <Textarea
             ref={textareaRef}
             value={value}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Listening…" : "Message AI Chat…"}
+            placeholder={isListening ? "Listening..." : "Talk to Buddy..."}
             disabled={isStreaming}
             rows={1}
             className="flex-1 resize-none bg-transparent border-0 p-0 text-sm text-white/85 placeholder:text-white/25 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[160px] overflow-y-auto leading-6 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -100,7 +100,7 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
             onClick={handleSend}
             disabled={!canSend}
             size="icon"
-            className="flex-shrink-0 w-8 h-8 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-white/[0.06] disabled:text-white/20 text-white transition-all duration-150 shadow-none"
+            className="flex-shrink-0 w-8 h-8 rounded-xl bg-pink-600 hover:bg-pink-500 disabled:bg-white/[0.06] disabled:text-white/20 text-white transition-all duration-150 shadow-none"
           >
             <Send className="w-3.5 h-3.5" />
           </Button>
