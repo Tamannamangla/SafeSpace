@@ -93,6 +93,7 @@ const Index = () => {
                   key={index}
                   message={message}
                   isLatest={index === messages.length - 1}
+                  isStreaming={isStreaming}
                 />
               ))}
               <div ref={messagesEndRef} />

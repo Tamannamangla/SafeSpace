@@ -1,13 +1,28 @@
-import { Bot, User } from "lucide-react";
+import { Bot, User, Volume2, VolumeX } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useSpeechSynthesis } from "@/hooks/use-speech-synthesis";
 import type { ChatMessage } from "../../../../backend/src/types";
 
 interface ChatBubbleProps {
   message: ChatMessage;
   isLatest: boolean;
+  isStreaming: boolean;
 }
 
-export function ChatBubble({ message, isLatest }: ChatBubbleProps) {
+export function ChatBubble({ message, isLatest, isStreaming }: ChatBubbleProps) {
   const isUser = message.role === "user";
+  const { isSpeaking, isSupported: ttsSupported, speak, stop } = useSpeechSynthesis();
+
+  const showSpeaker =
+    !isUser && ttsSupported && message.content.length > 0 && !(isLatest && isStreaming);
+
+  function handleSpeakerToggle() {
+    if (isSpeaking) {
+      stop();
+    } else {
+      speak(message.content);
+    }
+  }
 
   return (
     <div
@@ -29,18 +44,39 @@ export function ChatBubble({ message, isLatest }: ChatBubbleProps) {
       </div>
 
       {/* Bubble */}
-      <div
-        className={`relative max-w-[75%] md:max-w-[65%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
-          isUser
-            ? "bg-gradient-to-br from-violet-600 to-violet-700 text-white rounded-br-sm shadow-lg shadow-violet-900/30"
-            : "bg-[#141414] border border-white/[0.08] text-white/85 rounded-bl-sm"
-        }`}
-      >
-        {message.content !== "" ? (
-          message.content
-        ) : (
-          !isUser && isLatest ? <TypingIndicator /> : null
-        )}
+      <div className={`relative group max-w-[75%] md:max-w-[65%] ${isUser ? "" : ""}`}>
+        <div
+          className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
+            isUser
+              ? "bg-gradient-to-br from-violet-600 to-violet-700 text-white rounded-br-sm shadow-lg shadow-violet-900/30"
+              : "bg-[#141414] border border-white/[0.08] text-white/85 rounded-bl-sm"
+          }`}
+        >
+          {message.content !== "" ? (
+            message.content
+          ) : (
+            !isUser && isLatest ? <TypingIndicator /> : null
+          )}
+        </div>
+
+        {showSpeaker ? (
+          <Button
+            onClick={handleSpeakerToggle}
+            size="icon"
+            variant="ghost"
+            className={`absolute -bottom-1 left-10 w-6 h-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
+              isSpeaking
+                ? "text-blue-400 bg-blue-500/15 hover:bg-blue-500/25 hover:text-blue-300 opacity-100"
+                : "text-white/30 hover:text-white/60 hover:bg-white/[0.06]"
+            }`}
+          >
+            {isSpeaking ? (
+              <VolumeX className="w-3 h-3" />
+            ) : (
+              <Volume2 className="w-3 h-3" />
+            )}
+          </Button>
+        ) : null}
       </div>
     </div>
   );

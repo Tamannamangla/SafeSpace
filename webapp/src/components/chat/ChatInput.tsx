@@ -1,7 +1,8 @@
-import { useRef, useEffect, KeyboardEvent, ChangeEvent } from "react";
-import { Send } from "lucide-react";
+import { useRef, useEffect, useCallback, KeyboardEvent, ChangeEvent } from "react";
+import { Send, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 
 interface ChatInputProps {
   value: string;
@@ -12,6 +13,16 @@ interface ChatInputProps {
 
 export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const onTranscript = useCallback(
+    (text: string) => {
+      onChange(text);
+    },
+    [onChange]
+  );
+
+  const { isListening, isSupported: micSupported, start, stop } =
+    useSpeechRecognition(onTranscript);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -25,6 +36,7 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (!isStreaming && value.trim()) {
+        if (isListening) stop();
         onSend();
       }
     }
@@ -32,6 +44,19 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
 
   function handleChange(e: ChangeEvent<HTMLTextAreaElement>) {
     onChange(e.target.value);
+  }
+
+  function handleMicToggle() {
+    if (isListening) {
+      stop();
+    } else {
+      start();
+    }
+  }
+
+  function handleSend() {
+    if (isListening) stop();
+    onSend();
   }
 
   const canSend = !isStreaming && value.trim().length > 0;
@@ -45,13 +70,34 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
             value={value}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder="Message AI Chat…"
+            placeholder={isListening ? "Listening…" : "Message AI Chat…"}
             disabled={isStreaming}
             rows={1}
             className="flex-1 resize-none bg-transparent border-0 p-0 text-sm text-white/85 placeholder:text-white/25 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[160px] overflow-y-auto leading-6 disabled:opacity-50 disabled:cursor-not-allowed"
           />
+
+          {micSupported ? (
+            <Button
+              onClick={handleMicToggle}
+              disabled={isStreaming}
+              size="icon"
+              variant="ghost"
+              className={`flex-shrink-0 w-8 h-8 rounded-xl transition-all duration-150 shadow-none ${
+                isListening
+                  ? "bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300"
+                  : "text-white/40 hover:text-white/70 hover:bg-white/[0.06]"
+              }`}
+            >
+              {isListening ? (
+                <MicOff className="w-4 h-4" />
+              ) : (
+                <Mic className="w-4 h-4" />
+              )}
+            </Button>
+          ) : null}
+
           <Button
-            onClick={onSend}
+            onClick={handleSend}
             disabled={!canSend}
             size="icon"
             className="flex-shrink-0 w-8 h-8 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-white/[0.06] disabled:text-white/20 text-white transition-all duration-150 shadow-none"
@@ -59,9 +105,17 @@ export function ChatInput({ value, onChange, onSend, isStreaming }: ChatInputPro
             <Send className="w-3.5 h-3.5" />
           </Button>
         </div>
-        <p className="text-center text-[11px] text-white/20 mt-2">
-          Press Enter to send · Shift+Enter for newline
-        </p>
+
+        {isListening ? (
+          <p className="text-center text-[11px] text-red-400/70 mt-2 flex items-center justify-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+            Listening… tap mic to stop
+          </p>
+        ) : (
+          <p className="text-center text-[11px] text-white/20 mt-2">
+            Press Enter to send · Shift+Enter for newline
+          </p>
+        )}
       </div>
     </div>
   );
