@@ -18,6 +18,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   chatSession   ChatSession?
+  savedReports  SavedReport[]
 }
 
 model Session {
@@ -64,4 +65,15 @@ model ChatSession {
   messages  String   @default("[]")
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SavedReport {
+  id          String   @id @default(cuid())
+  userId      String
+  sessionId   String
+  reportData  String   // JSON blob of the full AnalysisReport object
+  riskLevel   String
+  wellbeing   Float
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

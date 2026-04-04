@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Report from "./pages/Report";
 import Login from "./pages/Login";
 import VerifyOtp from "./pages/VerifyOtp";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { GuestRoute } from "./components/GuestRoute";
@@ -49,6 +50,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Report />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

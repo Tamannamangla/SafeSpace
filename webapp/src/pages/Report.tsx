@@ -164,6 +164,13 @@ export default function Report() {
       try {
         const data = await api.post<AnalysisReport>("/api/analyze", { messages });
         setReport(data);
+        // Save report to backend
+        api.post("/api/reports", {
+          sessionId,
+          reportData: data,
+          riskLevel: data.riskLevel,
+          wellbeing: data.overallWellbeingScore,
+        }).catch(() => {/* silent fail - don't block the UI */});
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to analyze conversation.";
         setError(msg);
