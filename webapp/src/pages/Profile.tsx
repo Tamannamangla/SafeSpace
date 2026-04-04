@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, TrendingUp, AlertTriangle, Pencil, Check, X, Eye } from "lucide-react";
+import { ArrowLeft, FileText, TrendingUp, AlertTriangle, Pencil, Check, X, Eye, Brain, Activity } from "lucide-react";
 import { useSession, signOut, authClient } from "@/lib/auth-client";
 import { api } from "@/lib/api";
 import { Input } from "@/components/ui/input";
@@ -14,20 +14,78 @@ interface ReportSummary {
   createdAt: string;
 }
 
+interface EmotionNode {
+  name: string;
+  count: number;
+  avgIntensity: number;
+}
+
+interface TriggerNode {
+  name: string;
+  count: number;
+}
+
+interface EmotionLink {
+  emotion: string;
+  trigger: string;
+  count: number;
+}
+
+interface RecentEvent {
+  id: string;
+  emotion: string;
+  trigger: string;
+  event: string;
+  intensity: number;
+  createdAt: string;
+}
+
+interface EmotionalData {
+  emotions: EmotionNode[];
+  triggers: TriggerNode[];
+  links: EmotionLink[];
+  recentEvents: RecentEvent[];
+  totalMemories: number;
+}
+
+const EMOTION_COLORS: Record<string, string> = {
+  anxiety: "#f59e0b",
+  sadness: "#3b82f6",
+  joy: "#10b981",
+  fear: "#8b5cf6",
+  anger: "#ef4444",
+  guilt: "#f97316",
+  shame: "#ec4899",
+  loneliness: "#6366f1",
+  hope: "#06b6d4",
+  frustration: "#f43f5e",
+  grief: "#64748b",
+  confusion: "#a855f7",
+};
+
+function getEmotionColor(emotion: string): string {
+  return EMOTION_COLORS[emotion] ?? "#94a3b8";
+}
+
 export default function Profile() {
   const navigate = useNavigate();
   const { data: session, refetch } = useSession();
   const [reports, setReports] = useState<ReportSummary[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [editingName, setEditingName] = useState<boolean>(false);
-  const [nameInput, setNameInput] = useState<string>("");
-  const [savingName, setSavingName] = useState<boolean>(false);
+  const [emotionalData, setEmotionalData] = useState<EmotionalData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
-    api.get<ReportSummary[]>("/api/reports")
-      .then(setReports)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      api.get<ReportSummary[]>("/api/reports").catch(() => [] as ReportSummary[]),
+      api.get<EmotionalData>("/api/emotions").catch(() => null),
+    ]).then(([r, e]) => {
+      setReports(r);
+      setEmotionalData(e);
+      setLoading(false);
+    });
   }, []);
 
   const user = session?.user;
@@ -66,7 +124,7 @@ export default function Profile() {
       await refetch();
       setEditingName(false);
     } catch {
-      // silent fail
+      // silent
     } finally {
       setSavingName(false);
     }
@@ -160,6 +218,112 @@ export default function Profile() {
             </div>
           ))}
         </div>
+
+        {/* Emotional Memory Graph */}
+        {emotionalData && emotionalData.totalMemories > 0 ? (
+          <div>
+            <h2 className="text-xs font-semibold tracking-[0.15em] uppercase text-violet-400/70 mb-3 flex items-center gap-2">
+              <Brain className="w-3.5 h-3.5" />
+              Emotional Memory
+            </h2>
+
+            {/* Emotion nodes */}
+            <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-5 space-y-4">
+              {/* Emotion bubbles */}
+              <div>
+                <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-3">Detected Emotions</p>
+                <div className="flex flex-wrap gap-2">
+                  {emotionalData.emotions.map((e) => (
+                    <div
+                      key={e.name}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all"
+                      style={{
+                        backgroundColor: `${getEmotionColor(e.name)}10`,
+                        borderColor: `${getEmotionColor(e.name)}30`,
+                      }}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: getEmotionColor(e.name) }}
+                      />
+                      <span className="text-xs font-medium capitalize" style={{ color: getEmotionColor(e.name) }}>
+                        {e.name}
+                      </span>
+                      <span className="text-[10px] text-white/30">{e.count}x</span>
+                      <span className="text-[10px] text-white/20">avg {e.avgIntensity}/10</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Relationship links: emotion → trigger */}
+              <div>
+                <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-3">Patterns (emotion → trigger)</p>
+                <div className="space-y-2">
+                  {emotionalData.links
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 8)
+                    .map((link, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        <span className="capitalize font-medium" style={{ color: getEmotionColor(link.emotion) }}>
+                          {link.emotion}
+                        </span>
+                        <span className="text-white/15">→</span>
+                        <span className="text-white/50 capitalize">{link.trigger}</span>
+                        <div className="flex-1 h-1 bg-white/[0.03] rounded-full overflow-hidden ml-1">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${Math.min(100, (link.count / Math.max(...emotionalData.links.map(l => l.count))) * 100)}%`,
+                              backgroundColor: getEmotionColor(link.emotion),
+                              opacity: 0.5,
+                            }}
+                          />
+                        </div>
+                        <span className="text-white/20 text-[10px] w-6 text-right">{link.count}x</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Recent emotional events */}
+              {emotionalData.recentEvents.length > 0 ? (
+                <div>
+                  <p className="text-[10px] font-semibold text-white/30 uppercase tracking-wider mb-3">Recent Emotional Events</p>
+                  <div className="space-y-2">
+                    {emotionalData.recentEvents.slice(0, 5).map((event) => (
+                      <div key={event.id} className="flex items-start gap-3 py-2 border-b border-white/[0.04] last:border-0">
+                        <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+                          <Activity className="w-3 h-3" style={{ color: getEmotionColor(event.emotion) }} />
+                          <span
+                            className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border"
+                            style={{
+                              color: getEmotionColor(event.emotion),
+                              backgroundColor: `${getEmotionColor(event.emotion)}10`,
+                              borderColor: `${getEmotionColor(event.emotion)}30`,
+                            }}
+                          >
+                            {event.emotion}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-white/55 leading-relaxed">{event.event}</p>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="text-[10px] text-white/25 capitalize">trigger: {event.trigger}</span>
+                            <span className="text-[10px] text-white/25">intensity: {event.intensity}/10</span>
+                            <span className="text-[10px] text-white/15">
+                              {new Date(event.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         {/* Reports list */}
         <div>

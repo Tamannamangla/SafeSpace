@@ -8,17 +8,18 @@ datasource db {
 }
 
 model User {
-  id            String       @id
-  name          String
-  email         String       @unique
-  emailVerified Boolean      @default(false)
-  image         String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  chatSession   ChatSession?
-  savedReports  SavedReport[]
+  id                String             @id
+  name              String
+  email             String             @unique
+  emailVerified     Boolean            @default(false)
+  image             String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  sessions          Session[]
+  accounts          Account[]
+  chatSession       ChatSession?
+  savedReports      SavedReport[]
+  emotionalMemories EmotionalMemory[]
 }
 
 model Session {
@@ -76,4 +77,17 @@ model SavedReport {
   wellbeing   Float
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmotionalMemory {
+  id        String   @id @default(cuid())
+  userId    String
+  emotion   String   // e.g. anxiety, sadness, joy, fear, anger
+  trigger   String   // what triggered it: exam, work, relationship, loss
+  event     String   // specific event description
+  intensity Int      // 1-10
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
