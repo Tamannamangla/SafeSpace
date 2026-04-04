@@ -3,6 +3,7 @@ import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatBubble } from "@/components/chat/ChatBubble";
 import { ChatEmptyState } from "@/components/chat/ChatEmptyState";
 import { ChatInput } from "@/components/chat/ChatInput";
+import { useVoice } from "@/hooks/useVoice";
 
 export interface Message {
   id: string;
@@ -16,6 +17,7 @@ const Index = () => {
   const [input, setInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { voiceEnabled, setVoiceEnabled, lang, setLang, speak, stop, isSpeaking } = useVoice();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -24,6 +26,9 @@ const Index = () => {
   async function sendMessage(text: string) {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
+
+    // Stop any ongoing speech when user sends a message
+    stop();
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -37,7 +42,6 @@ const Index = () => {
     setInput("");
     setIsLoading(true);
 
-    // Create a placeholder assistant message to stream into
     const assistantId = (Date.now() + 1).toString();
     const assistantMessage: Message = {
       id: assistantId,
@@ -75,14 +79,17 @@ const Index = () => {
           )
         );
       }
+
+      // Speak the full response once streaming is complete
+      speak(accumulated);
     } catch (err) {
+      const errorText = "Sorry, I had trouble responding. Please try again.";
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === assistantId
-            ? { ...m, content: "Sorry, I had trouble responding. Please try again." }
-            : m
+          m.id === assistantId ? { ...m, content: errorText } : m
         )
       );
+      speak(errorText);
     } finally {
       setIsLoading(false);
     }
@@ -98,9 +105,17 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
-      <ChatHeader />
+      <ChatHeader
+        voiceEnabled={voiceEnabled}
+        onToggleVoice={() => {
+          if (voiceEnabled) stop();
+          setVoiceEnabled(!voiceEnabled);
+        }}
+        lang={lang}
+        onChangeLang={setLang}
+        isSpeaking={isSpeaking}
+      />
 
-      {/* Message list */}
       <main className="flex-1 pt-14 pb-28 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-4 py-6">
           {messages.length === 0 ? (
